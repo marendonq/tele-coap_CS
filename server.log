@@ -1,0 +1,28 @@
+Mon Sep 15 21:31:28 2025
+: Servidor iniciado...
+Mon Sep 15 21:31:28 2025
+: Socket UDP inicializado correctamente
+Mon Sep 15 21:31:28 2025
+: Servidor UDP escuchando en puerto 5683
+Mon Sep 15 21:31:40 2025
+: Mensaje recibido desde 127.0.0.1:58449
+Mon Sep 15 21:31:40 2025
+: Contenido: hola
+Tue Sep 16 10:38:29 2025
+: Servidor iniciado...
+Tue Sep 16 10:38:29 2025
+: Socket UDP inicializado correctamente
+Tue Sep 16 10:38:29 2025
+: Servidor UDP escuchando en puerto 5683
+Tue Sep 16 10:38:48 2025
+: Mensaje recibido desde 127.0.0.1:56187
+Tue Sep 16 10:38:48 2025
+: Contenido: hola
+Tue Sep 16 10:40:34 2025
+: Mensaje recibido desde 127.0.0.1:41345
+Tue Sep 16 10:40:34 2025
+: Contenido: hello
+Tue Sep 16 10:46:13 2025
+: Mensaje recibido desde 127.0.0.1:49111
+Tue Sep 16 10:46:13 2025
+: Contenido: sapamoda
