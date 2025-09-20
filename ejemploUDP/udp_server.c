@@ -4,11 +4,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <string.h>
 
-#define PORT 5683   // puerto estándar de CoAP
+#define PORT 5683 // puerto estándar de CoAP
 #define BUF_SIZE 1024
 
-int main() {
+int main()
+{
     int sockfd;
     char buffer[BUF_SIZE];
     struct sockaddr_in server_addr, client_addr;
@@ -16,7 +18,11 @@ int main() {
 
     // Crear socket UDP
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) { perror("socket"); exit(1); }
+    if (sockfd < 0)
+    {
+        perror("socket");
+        exit(1);
+    }
 
     // Configurar dirección del servidor
     server_addr.sin_family = AF_INET;
@@ -24,7 +30,8 @@ int main() {
     server_addr.sin_port = htons(PORT);
 
     // Enlazar el socket al puerto
-    if (bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
         perror("bind");
         exit(1);
     }
@@ -32,16 +39,20 @@ int main() {
     printf("Servidor UDP escuchando en puerto %d...\n", PORT);
 
     // Recibir mensajes
-    while (1) {
-        int n = recvfrom(sockfd, buffer, BUF_SIZE, 0,
-                         (struct sockaddr*)&client_addr, &addr_len);
+    while (1)
+    {
+        int n = recvfrom(sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
         buffer[n] = '\0';
-        printf("Mensaje recibido: %s\n", buffer);
+
+        char ip_str[INET_ADDRSTRLEN]; // espacio suficiente (16 bytes)
+        inet_ntop(AF_INET, &(client_addr.sin_addr), ip_str, INET_ADDRSTRLEN);
+
+        printf("Mensaje de %s enviado desde el puerto %d:%s\n", ip_str, client_addr.sin_port, buffer);
 
         // Responder al cliente
         char *reply = "ACK from server";
-        sendto(sockfd, reply, strlen(reply), 0,
-               (struct sockaddr*)&client_addr, addr_len);
+
+        sendto(sockfd, reply, strlen(reply), 0, (struct sockaddr *)&client_addr, addr_len);
     }
 
     close(sockfd);

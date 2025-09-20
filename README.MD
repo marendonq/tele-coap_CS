@@ -1,16 +1,17 @@
-Para probrar el codigo
+Para correr clienteTestMessage.c se usa nuestro modulo/libreria message.h, para importar.
 
 ```
-# compilar
-gcc udp_server.c -o udp_server
-gcc udp_client.c -o udp_client
+#include "message.h"
+```
+Para que el linker la encuentre
 
-# abrir dos terminales
-./udp_server        # en una terminal
-./udp_client        # en otra
+```
+gcc clientTestMessage.c model/message.c -o clientePrueba
 ```
 
-Aqui esta el socket UDP, que vamos a usar 
+No se como ignorar los ejecutables con gitignore, procurar borrarlos antes de subir el codigo.
+
+Aqui esta el socket UDP, que vamos a usar, mirar "reference/Sockets/BSD Socket"
 
 [BSD socket](https://www.keil.com/pack/doc/mw6/network/html/group__bsd__routines.html)
 
