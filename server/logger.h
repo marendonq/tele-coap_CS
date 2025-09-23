@@ -1,17 +1,24 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <string>
-#include <fstream>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-class Logger {
-private:
-    std::ofstream logFile;
-public:
-    Logger(const std::string &filename);
-    ~Logger();
-    void log(const std::string &message);
-};
+#include <stdio.h>
+
+typedef struct {
+    FILE *logFile;
+} Logger;
+
+// Funciones del logger
+Logger* logger_init(const char *filename);
+void logger_cleanup(Logger *logger);
+void logger_log(Logger *logger, const char *message);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
