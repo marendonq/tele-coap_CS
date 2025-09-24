@@ -1,6 +1,7 @@
 // multi_client_threaded.c — Cliente CoAP multi-threaded que simula N dispositivos ESP32 reales
 // Cada dispositivo corre en su propio thread
-// Compilar con: gcc multi_client_threaded.c -o coap_multi_client_threaded $(pkg-config --cflags --libs libcoap-3-gnutls) -lpthread
+// Compilar (Linux):
+//   gcc -o multi_client multi_client_threaded.c ../server/message.c -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,9 +9,12 @@
 #include <time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <coap3/coap.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <semaphore.h>
+
+#include "../server/message.h"
 
 // Estructura para datos del dispositivo
 typedef struct {
@@ -26,14 +30,14 @@ typedef struct {
     sem_t *start_semaphore;
 } device_data_t;
 
-static void add_uri_path(coap_pdu_t *pdu, const char *path) {
+static void add_uri_path_options(CoapMessage *msg, const char *path) {
     const char *p = path;
     while (*p == '/') p++;
     while (*p) {
         const char *start = p;
         while (*p && *p != '/') p++;
         size_t len = (size_t)(p - start);
-        if (len) coap_add_option(pdu, COAP_OPTION_URI_PATH, len, (const uint8_t*)start);
+        if (len) coap_add_option(msg, 11, (const unsigned char*)start, (unsigned short)len);
         while (*p == '/') p++;
     }
 }
@@ -43,43 +47,70 @@ static double rand_temp_tenth(void) {
     return r / 10.0;
 }
 
-static int send_one(coap_context_t *ctx,
-                    coap_session_t *session,
-                    const char *path,
-                    const char *device_id,
-                    unsigned seq,
-                    double temp_c,
-                    int confirmable) {
-    coap_pdu_t *pdu = coap_pdu_init(confirmable ? COAP_MESSAGE_CON : COAP_MESSAGE_NON,
-                                    COAP_REQUEST_POST,
-                                    coap_new_message_id(session),
-                                    coap_session_max_pdu_size(session));
-    if (!pdu) { fprintf(stderr, "[%s] No se pudo crear PDU\n", device_id); return -1; }
+static int send_one_udp(int sockfd,
+                        const struct sockaddr_in *server_addr,
+                        const char *path,
+                        const char *device_id,
+                        unsigned seq,
+                        double temp_c,
+                        int confirmable) {
+    unsigned char buffer[1024];
+    CoapMessage msg;
+    coap_message_init(&msg);
 
-    // Token pequeño aleatorio (2 bytes)
-    uint8_t token[2] = {(uint8_t)(rand() & 0xFF), (uint8_t)(rand() & 0xFF)};
-    coap_add_token(pdu, sizeof(token), token);
+    msg.type = confirmable ? 0 : 1; // 0=CON, 1=NON
+    msg.code = 2; // POST
+    msg.message_id = (unsigned short)(rand() & 0xFFFF);
 
-    add_uri_path(pdu, path);
+    // Token aleatorio de 2 bytes
+    msg.tkl = 2;
+    msg.token[0] = (unsigned char)(rand() & 0xFF);
+    msg.token[1] = (unsigned char)(rand() & 0xFF);
 
-    // Content-Format: application/json
-    unsigned char buf[4];
-    size_t cf_len = coap_encode_var_safe(buf, sizeof(buf), COAP_MEDIATYPE_APPLICATION_JSON);
-    coap_add_option(pdu, COAP_OPTION_CONTENT_FORMAT, cf_len, buf);
+    // Opciones de ruta
+    add_uri_path_options(&msg, path);
 
-    // Payload con seq para trazabilidad
+    // Content-Format: application/json (opción 12, valor 50 según RFC)
+    unsigned char cf = 50; // application/json
+    coap_add_option(&msg, 12, &cf, 1);
+
+    // Payload JSON
     char payload[160];
     snprintf(payload, sizeof(payload),
              "{\"id\":\"%s\",\"seq\":%u,\"temp_c\":%.1f}", device_id, seq, temp_c);
-    coap_add_data(pdu, strlen(payload), (const uint8_t*)payload);
+    coap_set_payload(&msg, (const unsigned char*)payload, (int)strlen(payload));
 
-    if (coap_send(session, pdu) == COAP_INVALID_MID) {
-        fprintf(stderr, "[%s] Fallo al enviar PDU\n", device_id);
+    int len = coap_serialize(&msg, buffer, sizeof(buffer));
+    if (len <= 0) {
+        fprintf(stderr, "[%s] Error al serializar CoAP\n", device_id);
         return -1;
     }
 
-    // Flush breve para dar tiempo a libcoap a mover buffers/ACKs
-    coap_io_process(ctx, 5); // 5 ms
+    ssize_t sent = sendto(sockfd, buffer, (size_t)len, 0,
+                          (const struct sockaddr*)server_addr, sizeof(*server_addr));
+    if (sent < 0) {
+        fprintf(stderr, "[%s] Error al enviar UDP\n", device_id);
+        return -1;
+    }
+
+    // Intentar leer una respuesta breve (no bloqueante largo)
+    struct timeval tv; tv.tv_sec = 0; tv.tv_usec = 50000; // 50 ms
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    unsigned char recv_buf[1024];
+    socklen_t addr_len = sizeof(*server_addr);
+    ssize_t recvd = recvfrom(sockfd, recv_buf, sizeof(recv_buf), 0,
+                             (struct sockaddr*)server_addr, &addr_len);
+    if (recvd > 0) {
+        CoapMessage resp;
+        if (coap_parse(&resp, recv_buf, (int)recvd) == 0) {
+            // Resumen mínimo de respuesta
+            printf("  <- resp code=%d len=%d\n", resp.code, resp.payload_len);
+            for (int i = 0; i < resp.option_count; i++) {
+                if (resp.options[i].value) free(resp.options[i].value);
+            }
+        }
+    }
     return 0;
 }
 
@@ -90,28 +121,21 @@ void* device_thread(void* arg) {
     // Esperar señal de inicio
     sem_wait(data->start_semaphore);
     
-    // Crear contexto CoAP para este dispositivo
-    coap_context_t *ctx = coap_new_context(NULL);
-    if (!ctx) { 
-        fprintf(stderr, "[ESP32-%d] No se pudo crear contexto\n", data->device_id); 
-        return NULL; 
-    }
-
-    coap_address_t dst; 
-    coap_address_init(&dst);
-    dst.addr.sin.sin_family = AF_INET;
-    dst.addr.sin.sin_port = htons(data->port);
-    if (inet_pton(AF_INET, data->host, &dst.addr.sin.sin_addr) != 1) {
-        fprintf(stderr, "[ESP32-%d] IP invalida: %s\n", data->device_id, data->host);
-        coap_free_context(ctx); 
+    // Crear socket UDP
+    int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sockfd < 0) {
+        fprintf(stderr, "[ESP32-%d] No se pudo crear socket UDP\n", data->device_id);
         return NULL;
     }
 
-    coap_session_t *session = coap_new_client_session(ctx, NULL, &dst, COAP_PROTO_UDP);
-    if (!session) { 
-        fprintf(stderr, "[ESP32-%d] No se pudo crear sesion\n", data->device_id); 
-        coap_free_context(ctx); 
-        return NULL; 
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(data->port);
+    if (inet_pton(AF_INET, data->host, &server_addr.sin_addr) != 1) {
+        fprintf(stderr, "[ESP32-%d] IP invalida: %s\n", data->device_id, data->host);
+        close(sockfd);
+        return NULL;
     }
 
     char dev_id[32];
@@ -129,16 +153,13 @@ void* device_thread(void* arg) {
         unsigned seq = ++(*(data->seq_ptr));
         pthread_mutex_unlock(data->seq_mutex);
 
-        if (send_one(ctx, session, data->path, dev_id, seq, t, data->confirmable_msgs) == 0) {
+        if (send_one_udp(sockfd, &server_addr, data->path, dev_id, seq, t, data->confirmable_msgs) == 0) {
             printf("[ESP32-%d] [round %ld] seq=%u -> %.1f°C\n", data->device_id, round+1, seq, t);
         }
 
         // Jitter aleatorio por dispositivo
         int jitter = 1000 * (5 + (rand() % 20)); // 5-24 ms
         usleep(jitter);
-
-        // Tiempo para IO residual
-        coap_io_process(ctx, 20);
 
         if (data->interval_ms > 0) {
             usleep((useconds_t)data->interval_ms * 1000);
@@ -147,9 +168,7 @@ void* device_thread(void* arg) {
     }
 
     printf("[ESP32-%d] Dispositivo terminado\n", data->device_id);
-
-    coap_session_release(session);
-    coap_free_context(ctx);
+    close(sockfd);
     return NULL;
 }
 
@@ -171,8 +190,6 @@ int main(int argc, char **argv) {
     if (num_devices <= 0) { fprintf(stderr, "num_devices debe ser > 0\n"); return 1; }
 
     srand((unsigned)(time(NULL) ^ getpid()));
-    coap_startup();
-    coap_set_log_level(LOG_WARNING);
 
     printf("=== Cliente CoAP Multi-threaded ===\n");
     printf("Simulando %d dispositivos %s -> coap://%s:%d%s\n",
@@ -232,7 +249,6 @@ int main(int argc, char **argv) {
     free(device_data);
     sem_destroy(&start_semaphore);
     pthread_mutex_destroy(&seq_mutex);
-    coap_cleanup();
 
     return 0;
 }
