@@ -1,32 +1,52 @@
 #include "coap_parser.h"
+#include "message.h"
 #include <string.h>
 #include <stdlib.h>
 
-// Función para leer un número de longitud variable (RFC 7252)
-static uint32_t read_var_length(const uint8_t **data, size_t *remaining) {
-    if (*remaining == 0) return 0;
+// Adaptador: convertir de CoapMessage a coap_message_t
+static void convert_from_coap_message(const CoapMessage *src, coap_message_t *dst) {
+    memset(dst, 0, sizeof(coap_message_t));
     
-    uint8_t first_byte = **data;
-    (*data)++;
-    (*remaining)--;
+    dst->ver = src->version;
+    dst->type = src->type;
+    dst->tkl = src->tkl;
+    dst->code = src->code;
+    dst->mid = src->message_id;
     
-    if (first_byte < 13) {
-        return first_byte;
-    } else if (first_byte == 13) {
-        if (*remaining < 1) return 0;
-        uint8_t second = **data;
-        (*data)++;
-        (*remaining)--;
-        return second + 13;
-    } else if (first_byte == 14) {
-        if (*remaining < 2) return 0;
-        uint16_t val = (**data << 8) | *(*data + 1);
-        (*data) += 2;
-        (*remaining) -= 2;
-        return val + 269;
-    } else {
-        // first_byte == 15, reservado
-        return 0;
+    // Copiar token
+    if (src->tkl > 0) {
+        memcpy(dst->token, src->token, src->tkl);
+    }
+    
+    // Copiar payload
+    if (src->payload_len > 0) {
+        dst->payload_len = src->payload_len;
+        dst->payload = (uint8_t*)malloc(src->payload_len);
+        if (dst->payload) {
+            memcpy(dst->payload, src->payload, src->payload_len);
+        }
+    }
+}
+
+// Adaptador: convertir de coap_message_t a CoapMessage
+static void convert_to_coap_message(const coap_message_t *src, CoapMessage *dst) {
+    coap_message_init(dst);
+    
+    dst->version = src->ver;
+    dst->type = src->type;
+    dst->tkl = src->tkl;
+    dst->code = src->code;
+    dst->message_id = src->mid;
+    
+    // Copiar token
+    if (src->tkl > 0) {
+        memcpy(dst->token, src->token, src->tkl);
+        dst->token_len = src->tkl;
+    }
+    
+    // Copiar payload
+    if (src->payload_len > 0) {
+        coap_set_payload(dst, src->payload, src->payload_len);
     }
 }
 
@@ -35,58 +55,19 @@ int parse_coap_message(const uint8_t *data, size_t len, coap_message_t *msg) {
         return -1; // Error: datos insuficientes
     }
     
-    memset(msg, 0, sizeof(coap_message_t));
-    
-    // Parsear header CoAP
-    uint8_t byte0 = data[0];
-    msg->ver = (byte0 >> 6) & 0x03;
-    msg->type = (byte0 >> 4) & 0x03;
-    msg->tkl = byte0 & 0x0F;
-    
-    msg->code = data[1];
-    msg->mid = (data[2] << 8) | data[3];
-    
-    size_t offset = 4;
-    
-    // Parsear token
-    if (msg->tkl > 0) {
-        if (offset + msg->tkl > len) return -1;
-        memcpy(msg->token, data + offset, msg->tkl);
-        offset += msg->tkl;
+    // Usar el parser del módulo CoAP
+    CoapMessage parsed_coap_message;
+    if (coap_parse(&parsed_coap_message, data, len) != 0) {
+        return -1; // Error en el parseo
     }
     
-    // Parsear opciones (simplificado - solo buscamos URI_PATH y CONTENT_FORMAT)
-    while (offset < len) {
-        if (offset >= len) break;
-        
-        uint8_t option_byte = data[offset++];
-        if (option_byte == 0xFF) {
-            // Payload marker
-            offset++;
-            break;
-        }
-        
-        // Parsear delta y length
-        uint32_t delta = read_var_length(&data, &offset);
-        uint32_t length = read_var_length(&data, &offset);
-        
-        if (offset + length > len) break;
-        
-        // Solo procesamos opciones importantes
-        if (delta == COAP_OPTION_URI_PATH || delta == COAP_OPTION_CONTENT_FORMAT) {
-            // Por simplicidad, solo guardamos que encontramos estas opciones
-            // En una implementación completa, guardaríamos los valores
-        }
-        
-        offset += length;
-    }
+    // Convertir al formato del servidor
+    convert_from_coap_message(&parsed_coap_message, msg);
     
-    // Parsear payload
-    if (offset < len) {
-        msg->payload_len = len - offset;
-        msg->payload = (uint8_t*)malloc(msg->payload_len);
-        if (msg->payload) {
-            memcpy(msg->payload, data + offset, msg->payload_len);
+    // Liberar memoria de opciones del mensaje parseado
+    for (int i = 0; i < parsed_coap_message.option_count; i++) {
+        if (parsed_coap_message.options[i].value) {
+            free(parsed_coap_message.options[i].value);
         }
     }
     
@@ -110,26 +91,39 @@ int create_coap_response(const coap_message_t *request, coap_message_t *response
                         uint8_t code, const char *payload, size_t payload_len) {
     if (!request || !response) return -1;
     
-    memset(response, 0, sizeof(coap_message_t));
+    // Convertir request a CoapMessage
+    CoapMessage request_coap_message;
+    convert_to_coap_message(request, &request_coap_message);
+    
+    // Crear respuesta usando el módulo CoAP
+    CoapMessage response_coap_message;
+    coap_message_init(&response_coap_message);
     
     // Configurar respuesta
-    response->ver = request->ver;
-    response->type = COAP_TYPE_ACKNOWLEDGMENT; // ACK para CON, NON para NON
-    response->tkl = request->tkl;
-    response->code = code;
-    response->mid = request->mid;
+    response_coap_message.version = request_coap_message.version;
+    response_coap_message.type = COAP_TYPE_ACKNOWLEDGMENT; // ACK para CON, NON para NON
+    response_coap_message.tkl = request_coap_message.tkl;
+    response_coap_message.code = code;
+    response_coap_message.message_id = request_coap_message.message_id;
     
     // Copiar token
-    if (request->tkl > 0) {
-        memcpy(response->token, request->token, request->tkl);
+    if (request_coap_message.tkl > 0) {
+        memcpy(response_coap_message.token, request_coap_message.token, request_coap_message.tkl);
+        response_coap_message.token_len = request_coap_message.tkl;
     }
     
     // Configurar payload
     if (payload && payload_len > 0) {
-        response->payload = (uint8_t*)malloc(payload_len);
-        if (response->payload) {
-            memcpy(response->payload, payload, payload_len);
-            response->payload_len = payload_len;
+        coap_set_payload(&response_coap_message, (const unsigned char*)payload, payload_len);
+    }
+    
+    // Convertir respuesta al formato del servidor
+    convert_from_coap_message(&response_coap_message, response);
+    
+    // Liberar memoria de opciones
+    for (int i = 0; i < request_coap_message.option_count; i++) {
+        if (request_coap_message.options[i].value) {
+            free(request_coap_message.options[i].value);
         }
     }
     
@@ -139,29 +133,19 @@ int create_coap_response(const coap_message_t *request, coap_message_t *response
 size_t serialize_coap_message(const coap_message_t *msg, uint8_t *buffer, size_t buffer_size) {
     if (!msg || !buffer || buffer_size < 4) return 0;
     
-    size_t offset = 0;
+    // Convertir a CoapMessage
+    CoapMessage coap_message;
+    convert_to_coap_message(msg, &coap_message);
     
-    // Escribir header
-    uint8_t byte0 = (msg->ver << 6) | (msg->type << 4) | (msg->tkl & 0x0F);
-    buffer[offset++] = byte0;
-    buffer[offset++] = msg->code;
-    buffer[offset++] = (msg->mid >> 8) & 0xFF;
-    buffer[offset++] = msg->mid & 0xFF;
+    // Serializar usando el módulo CoAP
+    int len = coap_serialize(&coap_message, buffer, buffer_size);
     
-    // Escribir token
-    if (msg->tkl > 0 && offset + msg->tkl <= buffer_size) {
-        memcpy(buffer + offset, msg->token, msg->tkl);
-        offset += msg->tkl;
-    }
-    
-    // Escribir payload marker y payload
-    if (msg->payload && msg->payload_len > 0) {
-        if (offset + 1 + msg->payload_len <= buffer_size) {
-            buffer[offset++] = 0xFF; // Payload marker
-            memcpy(buffer + offset, msg->payload, msg->payload_len);
-            offset += msg->payload_len;
+    // Liberar memoria de opciones
+    for (int i = 0; i < coap_message.option_count; i++) {
+        if (coap_message.options[i].value) {
+            free(coap_message.options[i].value);
         }
     }
     
-    return offset;
+    return (len > 0) ? len : 0;
 }
