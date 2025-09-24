@@ -85,5 +85,3 @@ tail -f server.log           # ver eventos del servidor
 cat server/data_store.log    # ver respaldos de valores por recurso
 ```
 
-## Notas
-- Para “historial” o múltiples dispositivos, usar `Uri-Path` diferenciados (ej. `/sensors/temp/esp32-1`) o extender `data_store` a listas de lecturas.
