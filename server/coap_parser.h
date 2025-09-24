@@ -20,6 +20,12 @@ typedef struct {
     size_t options_len; // Longitud de opciones
     uint8_t *payload;   // Payload
     size_t payload_len; // Longitud del payload
+
+    // Campos derivados para facilitar el ruteo
+    char uri_path[128];     // Uri-Path concatenado, p. ej. "/sensors/temp"
+    size_t uri_path_len;    // Longitud del uri_path
+    int content_format;     // Content-Format si viene presente (ej. 50=application/json), -1 si no presente
+    
 } coap_message_t;
 
 // Códigos de método CoAP

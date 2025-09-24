@@ -63,6 +63,33 @@ int parse_coap_message(const uint8_t *data, size_t len, coap_message_t *msg) {
     
     // Convertir al formato del servidor
     convert_from_coap_message(&parsed_coap_message, msg);
+
+    // Derivar Uri-Path y Content-Format para facilitar ruteo
+    msg->uri_path[0] = '\0';
+    msg->uri_path_len = 0;
+    msg->content_format = -1;
+
+    int last_number = 0;
+    for (int i = 0; i < parsed_coap_message.option_count; i++) {
+        int number = parsed_coap_message.options[i].number; // ya es absoluto en este módulo
+        if (number == COAP_OPTION_URI_PATH) {
+            // Añadir '/' si no es el primero
+            if (msg->uri_path_len + 1 < sizeof(msg->uri_path)) {
+                msg->uri_path[msg->uri_path_len++] = '/';
+            }
+            unsigned short seg_len = parsed_coap_message.options[i].length;
+            if (msg->uri_path_len + seg_len < sizeof(msg->uri_path)) {
+                memcpy(&msg->uri_path[msg->uri_path_len], parsed_coap_message.options[i].value, seg_len);
+                msg->uri_path_len += seg_len;
+                msg->uri_path[msg->uri_path_len] = '\0';
+            }
+        } else if (number == COAP_OPTION_CONTENT_FORMAT) {
+            if (parsed_coap_message.options[i].length == 1) {
+                msg->content_format = parsed_coap_message.options[i].value[0];
+            }
+        }
+        last_number = number;
+    }
     
     // Liberar memoria de opciones del mensaje parseado
     for (int i = 0; i < parsed_coap_message.option_count; i++) {

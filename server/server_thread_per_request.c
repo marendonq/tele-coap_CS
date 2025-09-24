@@ -1,6 +1,7 @@
 #include "server.h"
 #include "logger.h"
 #include "coap_parser.h"
+#include "coap_router.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -74,61 +75,27 @@ void* process_message(void* arg) {
                 request.ver, request.type, request.code);
         logger_log(logger, log_msg);
 
-        // Procesar según el método
-        if (request.code == COAP_METHOD_POST) {
-            printf("[Thread %lu] Método: POST\n", thread_id);
-            
-            if (request.payload && request.payload_len > 0) {
-                char payload_str[256];
-                size_t payload_len = (request.payload_len < sizeof(payload_str) - 1) ? 
-                                    request.payload_len : sizeof(payload_str) - 1;
-                memcpy(payload_str, request.payload, payload_len);
-                payload_str[payload_len] = '\0';
-                
-                printf("[Thread %lu] Payload: %s\n", thread_id, payload_str);
-                
-                char log_msg[512];
-                snprintf(log_msg, sizeof(log_msg), "Payload recibido: %s", payload_str);
-                logger_log(logger, log_msg);
-                
-                // Simular procesamiento de datos de temperatura
-                printf("[Thread %lu] [POST] /sensors/temp <- %s\n", thread_id, payload_str);
-            } else {
-                printf("[Thread %lu] Payload: <vacío>\n", thread_id);
-                logger_log(logger, "Payload vacío recibido");
-            }
-
-            // Crear respuesta CoAP
-            const char *response_payload = "{\"status\":\"ok\",\"message\":\"Temperature data received\"}";
-            if (create_coap_response(&request, &response, COAP_RESPONSE_CHANGED, 
-                                   response_payload, strlen(response_payload)) == 0) {
-                
-                // Serializar respuesta
+        // Delegar al router para manejar GET/POST/PUT/DELETE
+        uint8_t resp_code = COAP_RESPONSE_VALID;
+        char response_payload[512];
+        if (coap_router_handle_request(&request, &resp_code, response_payload, sizeof(response_payload)) == 0) {
+            if (create_coap_response(&request, &response, resp_code, response_payload, strlen(response_payload)) == 0) {
                 uint8_t response_buffer[BUFFER_SIZE];
                 size_t response_len = serialize_coap_message(&response, response_buffer, BUFFER_SIZE);
-                
                 if (response_len > 0) {
-                    // Enviar respuesta
                     ssize_t sent = sendto(sockfd, response_buffer, response_len, 0,
                                         (struct sockaddr *)client_addr, client_len);
-                    
                     if (sent > 0) {
                         printf("[Thread %lu] Respuesta enviada (%zd bytes)\n", thread_id, sent);
-                        char log_msg[256];
-                        snprintf(log_msg, sizeof(log_msg), "Respuesta CoAP enviada (%zd bytes)", sent);
-                        logger_log(logger, log_msg);
+                        char log_msg2[256];
+                        snprintf(log_msg2, sizeof(log_msg2), "Respuesta CoAP enviada (%zd bytes)", sent);
+                        logger_log(logger, log_msg2);
                     } else {
                         logger_log(logger, "Error al enviar respuesta");
                     }
                 }
-                
                 free_coap_message(&response);
             }
-        } else {
-            printf("[Thread %lu] Método no soportado: %d\n", thread_id, request.code);
-            char log_msg[256];
-            snprintf(log_msg, sizeof(log_msg), "Método CoAP no soportado: %d", request.code);
-            logger_log(logger, log_msg);
         }
         
         free_coap_message(&request);

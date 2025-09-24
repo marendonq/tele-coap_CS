@@ -1,5 +1,6 @@
 #include "server.h"
 #include "logger.h"
+#include "data_store.h"
 #include <stdlib.h>   // atoi
 #include <stdio.h>    // printf
 
@@ -24,10 +25,14 @@ int main(int argc, char *argv[]) {
     
     logger_log(logger, "Servidor iniciado...");
 
+    // Inicializar almacén con persistencia simple
+    data_store_init("data_store.log");
+
     // Iniciar servidor UDP
     start_server(port, logger);
 
-    // Limpiar logger
+    // Limpiar almacén y logger
+    data_store_cleanup();
     logger_cleanup(logger);
 
     return 0;

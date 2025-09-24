@@ -1,107 +1,89 @@
-## Servidor CoAP (Thread-per-Request) y Cliente de Pruebas
+## Servidor CoAP (Thread-per-Request), Simulador ESP y Cliente CLI
 
-Este proyecto implementa un servidor CoAP mínimo sobre UDP usando sockets de Berkeley y un cliente de carga en C basado en libcoap que simula múltiples dispositivos (ESP32) enviando datos de temperatura por POST.
+Proyecto en C (Linux) que implementa un servidor CoAP sobre UDP, un simulador multi‑hilo (ESP32) y un cliente CLI. No usa librerías externas de CoAP; incluye parser/serializador propio y persistencia simple.
 
-### ¿Cómo funciona?
+### Componentes
+- `server/`
+  - `main.c`: entrada; inicia logger y persistencia.
+  - `server_thread_per_request.c`: socket UDP + threading por mensaje.
+  - `coap_parser.{h,c}`: parseo/serialización CoAP (adaptador a `CoapMessage`). Deriva `uri_path` y `content_format`.
+  - `coap_router.{h,c}`: ruteo por `Uri-Path` y manejo de métodos GET/POST/PUT/DELETE.
+  - `data_store.{h,c}`: persistencia simple (último JSON por recurso), con respaldo en `data_store.log`.
+  - `message.{h,c}`: modelo y rutinas CoAP compartidas (cliente/servidor).
+  - `logger.{h,c}`: logging a `server.log`.
+- `esp/`
+  - `multi_client_threaded.c`: simulador multi‑cliente (hilos) que envía CoAP únicamente con método POST usando `message.{h,c}`.
+- `client/`
+  - `coap_cli.c`: cliente de línea de comandos para probar los 4 métodos.
 
-- **Servidor (`server_thread_per_request.cpp`)**: crea un socket UDP, recibe datagramas y, por cada mensaje, lanza un thread para procesarlo (modelo thread-per-request). Se intenta parsear el datagrama como CoAP con un parser propio (`coap_parser.c`). Si es un POST a `coap://<IP>:<PUERTO>/sensors/temp` con payload, el servidor responde con un ACK CoAP y payload JSON de confirmación.
-- **Punto de entrada (`main.cpp`)**: lee `puerto` y `archivo_log` opcionales, inicializa `Logger` y arranca el servidor.
-- **Parser CoAP (`coap_parser.c/.h`)**: parseo simplificado del encabezado, token, opciones básicas y payload; utilidades para crear y serializar respuestas CoAP.
-- **Logger (`logger.cpp/.h`)**: append a `server.log` con timestamp para cada evento.
-- **Cliente (`esp/multi_client_threaded.c`)**: usa libcoap para crear N sesiones cliente concurrentes (un thread por dispositivo) que envían POST en `/sensors/temp` con JSON `{"id":"esp32-i","seq":N,"temp_c":T}`. Permite mensajes CON o NON, intervalos, rondas, etc.
-
-## Estructura relevante
-
-- `server/main.cpp`: entrada del servidor.
-- `server/server_thread_per_request.cpp`: lógica UDP + threading por request.
-- `server/server.h`: declaración de `start_server`.
-- `server/coap_parser.c/.h`: parser y helpers CoAP.
-- `server/logger.cpp/.h`: logging a archivo.
-- `esp/multi_client_threaded.c`: cliente de carga multi-thread con libcoap.
+---
 
 ## Requisitos
-
-- Linux o WSL (Windows Subsystem for Linux) recomendado para compilar/ejecutar.
-- Paquetes: `build-essential`, `gcc`, `g++`. Para el cliente: `libcoap-3-dev` y `libcoap-3-gnutls-dev`.
-
-## Compilación
-
-Desde el directorio `server/`:
+- Linux o WSL.
+- Paquetes: `build-essential`, `gcc`.
 
 ```bash
 sudo apt update
-sudo apt install -y build-essential gcc g++
-g++ -std=c++11 -Wall -Wextra -O2 -pthread -o coap_server_tpr \
-  main.cpp server_thread_per_request.cpp logger.cpp coap_parser.c
+sudo apt install -y build-essential gcc
 ```
 
-Cliente (desde `esp/`):
+## Compilación
 
+Servidor:
 ```bash
-sudo apt install -y libcoap-3-dev libcoap-3-gnutls-dev
-gcc multi_client_threaded.c -o coap_multi_client_threaded \
-  $(pkg-config --cflags --libs libcoap-3-gnutls) -lpthread
+cd "esp y server/server"
+gcc -o coap_server main.c server_thread_per_request.c coap_parser.c coap_router.c data_store.c message.c logger.c -lpthread
+```
+
+Simulador ESP (solo POST):
+```bash
+cd "../esp"
+gcc -o multi_client multi_client_threaded.c ../server/message.c -lpthread
+```
+
+Cliente CLI:
+```bash
+cd "../client"
+gcc -o coap_cli coap_cli.c ../server/message.c
 ```
 
 ## Ejecución
 
-Servidor (en `server/`):
-
+Servidor (terminal 1):
 ```bash
-./coap_server_tpr 5683 server.log
+cd "esp y server/server"
+./coap_server 5683 server.log
 ```
 
-Parámetros:
-
-- `puerto` (default 5683)
-- `archivo_log` (opcional, default `server.log`)
-
-Cliente (en `esp/`, en otra terminal):
-
+Simulador (terminal 2, ejemplos):
 ```bash
-./coap_multi_client_threaded <host> <puerto> <ruta> <num_devices> [interval_ms=5000] [rounds=0] [mode=non|con]
+cd "../esp"
+# POST 2 dispositivos, 2 rondas
+./multi_client 127.0.0.1 5683 /sensors/temp 2 500 2 con post
+# (El simulador solo envía POST; para GET/PUT/DELETE usa el cliente CLI)
 ```
 
-Ejemplo local:
-
+Cliente CLI (terminal 3, ejemplos):
 ```bash
-./coap_multi_client_threaded 127.0.0.1 5683 /sensors/temp 5 2000 10 non
+cd "esp y server/client"
+./coap_cli 127.0.0.1 5683 /sensors/temp post con '{"temp_c":21.0}'
+./coap_cli 127.0.0.1 5683 /sensors/temp get con
+./coap_cli 127.0.0.1 5683 /sensors/temp put con '{"temp_c":23.4}'
+./coap_cli 127.0.0.1 5683 /sensors/temp delete con
 ```
 
-## Qué esperar en consola
+## Comportamiento esperado
+- Métodos soportados (RFC 7252 básicos):
+  - GET → 2.05 Content (69) con payload JSON del último valor guardado.
+  - POST/PUT → 2.04 Changed (68). Guardan el JSON recibido para ese `Uri-Path`.
+  - DELETE → 2.02 Deleted (66). Elimina el recurso del almacén (re‑escribe `data_store.log`).
+- Persistencia: `data_store.log` acumula entradas; el almacén en memoria conserva solo el último valor por recurso. Tras DELETE, se borra del archivo.
 
-- El servidor muestra IP/puerto del cliente, bytes recibidos, método CoAP y payload; responde con `2.04 Changed` y JSON `{ "status":"ok" ... }`.
-- El cliente imprime por dispositivo la ronda, secuencia y temperatura enviada. En modo `con`, verás gestión de ACKs por libcoap.
-
-## Pruebas rápidas
-
-- Cambia `num_devices` y `interval_ms` para generar más o menos carga.
-- Prueba `mode=con` para mensajes confirmables: `./coap_multi_client_threaded 127.0.0.1 5683 /sensors/temp 10 200 100 con`.
-- Usa otra máquina en la misma red: reemplaza `127.0.0.1` por la IP del servidor.
-
-## Verificación y diagnóstico
-
+## Diagnóstico
 ```bash
-# Ver puerto abierto
-ss -lun | grep 5683
-
-# Seguir logs
-tail -f server.log
-
-# Capturar tráfico UDP CoAP (opcional, requiere privilegios)
-sudo tcpdump -i any udp port 5683 -vv -X
+tail -f server.log           # ver eventos del servidor
+cat server/data_store.log    # ver respaldos de valores por recurso
 ```
 
-Si no recibes respuestas:
-
-- Verifica firewall (UFW/Windows Defender) permita UDP 5683.
-- Asegura que el `host` del cliente es alcanzable (`ping <ip>`).
-- En WSL, prueba primero con `127.0.0.1`. Para acceso desde LAN, usa WSL2 con mapeo de puertos o ejecuta en Linux nativo.
-
-## Limpieza
-
-```bash
-rm -f coap_server_tpr
-rm -f server.log
-cd ../esp && rm -f coap_multi_client_threaded
-```
+## Notas
+- Para “historial” o múltiples dispositivos, usar `Uri-Path` diferenciados (ej. `/sensors/temp/esp32-1`) o extender `data_store` a listas de lecturas.
