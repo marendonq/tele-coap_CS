@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#include "../server/message.h"
+#include "message.h"
 
 // Estructura para datos del dispositivo
 typedef struct {
