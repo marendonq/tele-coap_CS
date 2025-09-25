@@ -48,6 +48,8 @@ int main()
         
         coap_parse(&recvMessage, buffer, BUF_SIZE);
 
+        
+
         // respond with ack
 
         // sendto(sockfd, reply, strlen(reply), 0, (struct sockaddr *)&client_addr, addr_len);

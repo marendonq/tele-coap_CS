@@ -43,6 +43,8 @@ int main()
 
     sendto(socketID, &buffer, sizeof(buffer), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
+    printf("Mensaje enviado\n");
+
     // sendto(sockfd, buffer, len, 0, (struct sockaddr *)&dest, sizeof(dest));
 
     // En recepcion
