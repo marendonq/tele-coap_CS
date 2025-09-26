@@ -85,3 +85,9 @@ tail -f server.log           # ver eventos del servidor
 cat server/data_store.log    # ver respaldos de valores por recurso
 ```
 
+## Conexion con EC2
+
+```
+ssh -i tu_clave.pem ubuntu@<IP_PUBLICA_DE_TU_EC2>
+
+```
