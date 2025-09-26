@@ -55,9 +55,14 @@ int data_store_init(const char *filepath) {
     strncpy(store_file, filepath, sizeof(store_file)-1);
     store_file[sizeof(store_file)-1] = '\0';
 
-    // Cargar pares key\tjson por línea si existe
+    // Crear el archivo si no existe
     FILE *f = fopen(store_file, "r");
-    if (!f) return 0; // no existe aún
+    if (!f) {
+        // Archivo no existe, crearlo vacío
+        f = fopen(store_file, "w");
+        if (f) fclose(f);
+        return 0; // archivo creado, no hay datos que cargar
+    }
     char line[1024];
     while (fgets(line, sizeof(line), f)) {
         char *tab = strchr(line, '\t');
