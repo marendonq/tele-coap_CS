@@ -100,9 +100,6 @@ int coap_serialize(CoapMessage *msg, unsigned char *buffer, int buf_size)
 
 int coap_parse(CoapMessage *msg, const unsigned char *buffer, int len)
 {
-
-    printf("Mensaje recibido\n");
-
     if (len < 4)
         return -1;
 
