@@ -29,10 +29,13 @@ sudo apt install -y build-essential gcc
 
 ## Compilación
 
+*Ejecutar en diferentes terminales en el siguiente orden*
+
 Servidor:
 ```bash
-cd "esp y server/server"
-gcc -o coap_server main.c server_thread_per_request.c coap_parser.c coap_router.c data_store.c message.c logger.c -lpthread
+cd "/server"
+# gcc -o coap_server main.c server_thread_per_request.c coap_parser.c coap_router.c data_store.c message.c logger.c -lpthread 
+gcc -o coap_server main.c coap_api.c server_thread_per_request.c coap_parser.c coap_router.c data_store.c message.c logger.c -lpthread
 ```
 
 Simulador ESP (solo POST):

@@ -1,4 +1,3 @@
-.vscode
 *.exe
 .venv
 server/coap_server 

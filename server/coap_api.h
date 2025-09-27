@@ -16,20 +16,23 @@ extern "C" {
 #define COAP_METHOD_PUT     3
 #define COAP_METHOD_DELETE  4
 
+// Tipo de handler
+typedef void (*coap_handler_fn)(const coap_message_t *msg);
+
 typedef struct {
     char uri[128];
     uint8_t method;
     coap_handler_fn handler;
 } Route;
 
-// Tipo de handler
-typedef void (*coap_handler_fn)(const coap_message_t *msg);
+
+coap_handler_fn find_handler(const char* uri, uint8_t method);
 
 // Registrar handler para una URI y método
 int coap_register_handler(const char* uri, uint8_t method, coap_handler_fn fn);
 
 // Iniciar servidor
-int coap_server_start(int port, char *logFileName);
+int coap_server_start(int port, const char *logFileName);
 
 // Detener servidor
 // void coap_server_stop();

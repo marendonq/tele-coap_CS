@@ -25,7 +25,7 @@ int coap_register_handler(const char* uri, uint8_t method, coap_handler_fn fn) {
     return 0;
 }
 
-static coap_handler_fn find_handler(const char* uri, uint8_t method) {
+coap_handler_fn find_handler(const char* uri, uint8_t method) {
     for (int i = 0; i < route_count; i++) {
         if (routes[i].method == method && strcmp(routes[i].uri, uri) == 0) {
             return routes[i].handler;
@@ -34,7 +34,7 @@ static coap_handler_fn find_handler(const char* uri, uint8_t method) {
     return NULL;
 }
 
-int coap_server_start(int port,char *logFileName)
+int coap_server_start(int port,const char *logFileName)
 {           
     // Inicializar logger
     Logger *logger = logger_init(logFileName);

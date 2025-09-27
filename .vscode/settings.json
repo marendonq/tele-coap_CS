@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "coap_router.h": "c",
+        "coap_api.h": "c"
+    }
+}
