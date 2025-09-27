@@ -1,5 +1,3 @@
-#include "server.h"
-#include "logger.h"
 #include "data_store.h"
 #include "coap_api.h"
 #include <stdlib.h>   // atoi
