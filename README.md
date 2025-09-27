@@ -29,6 +29,13 @@ sudo apt install -y build-essential gcc
 
 ## Compilación
 
+### Opcion 1.
+*Leer el archivo makfile y ejecuta las directivas de compilacion*
+```
+  make
+```
+
+
 *Ejecutar en diferentes terminales en el siguiente orden*
 
 Servidor:
