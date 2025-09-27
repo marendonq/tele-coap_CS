@@ -62,13 +62,11 @@ gcc -o coap_cli coap_cli.c ../server/message.c
 
 Servidor (terminal 1):
 ```bash
-cd "esp y server/server"
 ./coap_server 5683 server.log
 ```
 
 Simulador (terminal 2, ejemplos):
 ```bash
-cd "../esp"
 # POST 2 dispositivos, 2 rondas
 ./multi_client 127.0.0.1 5683 /sensors/temp 2 500 2 con post
 # (El simulador solo envía POST; para GET/PUT/DELETE usa el cliente CLI)
@@ -76,7 +74,6 @@ cd "../esp"
 
 Cliente CLI (terminal 3, ejemplos):
 ```bash
-cd "esp y server/client"
 ./coap_cli 127.0.0.1 5683 /sensors/temp post con '{"temp_c":21.0}'
 ./coap_cli 127.0.0.1 5683 /sensors/temp get con
 ./coap_cli 127.0.0.1 5683 /sensors/temp put con '{"temp_c":23.4}'
