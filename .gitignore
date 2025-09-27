@@ -1,3 +1,9 @@
 .vscode
 *.exe
 .venv
+server/coap_server 
+server/data_store.log 
+server/main 
+server/server.log 
+esp/multi_client 
+client/coap_cli
