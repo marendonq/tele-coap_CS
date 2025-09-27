@@ -33,8 +33,9 @@ sudo apt install -y build-essential gcc
 *Leer el archivo makfile y ejecuta las directivas de compilacion*
 ```
   make
-```
-
+``` 
+### Opcion 2.
+Para una compilacion mas pausada o para analisar cada componente del repo usar esta opcion.
 
 *Ejecutar en diferentes terminales en el siguiente orden*
 
