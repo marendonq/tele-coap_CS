@@ -27,6 +27,7 @@ sudo apt update
 sudo apt install -y build-essential gcc
 ```
 
+
 ## Compilación
 
 ### Opcion 1.
@@ -96,6 +97,5 @@ cat server/data_store.log    # ver respaldos de valores por recurso
 ## Conexion con EC2
 
 ```
-ssh -i tu_clave.pem ubuntu@<IP_PUBLICA_DE_TU_EC2>
-
+ssh -i tu_clave.pem ubuntu@44.194.124.206
 ```
