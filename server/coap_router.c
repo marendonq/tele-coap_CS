@@ -1,4 +1,5 @@
 #include "coap_router.h"
+#include "coap_api.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -9,21 +10,6 @@
 
 static Route routes[MAX_ROUTES];
 static int route_count = 0;
-
-//TODO: mirar si es necesario que el ruter sepa cuantos hilos hay corriendo
-//static int running = 0;
-
-
-// ===== Buscar handler =====
-static coap_handler_fn find_handler(const char* uri, uint8_t method) {
-    for (int i = 0; i < route_count; i++) {
-        if (routes[i].method == method && strcmp(routes[i].uri, uri) == 0) {
-            return routes[i].handler;
-        }
-    }
-    return NULL;
-}
-
 
 
 int coap_router_handle_request(const coap_message_t* request, uint8_t* out_code, char* out_payload, size_t out_payload_size) {
@@ -38,7 +24,11 @@ int coap_router_handle_request(const coap_message_t* request, uint8_t* out_code,
     {
         //Falla en caso de no encontrar un handler registrado para esa ruta y ese metodo
         return -1;
+    }else 
+    {
+        handler(request);
     }
+
     
     
     // switch (request->code) {
