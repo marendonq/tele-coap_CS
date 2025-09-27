@@ -1,0 +1,48 @@
+Fri Sep 26 13:44:59 2025: Servidor iniciado...
+Fri Sep 26 13:44:59 2025: Socket UDP inicializado correctamente
+Fri Sep 26 13:44:59 2025: Servidor CoAP Thread-per-Request escuchando en puerto 5683
+Fri Sep 26 13:45:11 2025: Mensaje recibido desde 127.0.0.1:57202 (60 bytes)
+Fri Sep 26 13:45:11 2025: Mensaje recibido desde 127.0.0.1:45908 (60 bytes)
+Fri Sep 26 13:45:11 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:11 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:11 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:11 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:11 2025: Mensaje recibido desde 127.0.0.1:45908 (60 bytes)
+Fri Sep 26 13:45:11 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:11 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:11 2025: Mensaje recibido desde 127.0.0.1:57202 (60 bytes)
+Fri Sep 26 13:45:11 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:11 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:23 2025: Mensaje recibido desde 127.0.0.1:48819 (19 bytes)
+Fri Sep 26 13:45:23 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:1
+Fri Sep 26 13:45:23 2025: Respuesta CoAP enviada (22 bytes)
+Fri Sep 26 13:45:28 2025: Mensaje recibido desde 127.0.0.1:47680 (37 bytes)
+Fri Sep 26 13:45:28 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:28 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:44 2025: Mensaje recibido desde 127.0.0.1:37427 (60 bytes)
+Fri Sep 26 13:45:44 2025: Mensaje recibido desde 127.0.0.1:53167 (60 bytes)
+Fri Sep 26 13:45:44 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:44 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:44 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:44 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:45 2025: Mensaje recibido desde 127.0.0.1:53167 (60 bytes)
+Fri Sep 26 13:45:45 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:45 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 13:45:45 2025: Mensaje recibido desde 127.0.0.1:37427 (60 bytes)
+Fri Sep 26 13:45:45 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 13:45:45 2025: Respuesta CoAP enviada (50 bytes)
+Fri Sep 26 19:28:48 2025: Servidor iniciado...
+Fri Sep 26 19:29:12 2025: Socket UDP inicializado correctamente
+Fri Sep 26 19:30:19 2025: Servidor CoAP Thread-per-Request escuchando en puerto 5683
+Fri Sep 26 19:40:52 2025: Mensaje recibido desde 127.0.0.1:40767 (37 bytes)
+Fri Sep 26 19:40:52 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 19:43:34 2025: Servidor iniciado...
+Fri Sep 26 19:43:34 2025: Socket UDP inicializado correctamente
+Fri Sep 26 19:43:34 2025: Servidor CoAP Thread-per-Request escuchando en puerto 5683
+Fri Sep 26 19:47:48 2025: Mensaje recibido desde 127.0.0.1:60918 (37 bytes)
+Fri Sep 26 19:48:28 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
+Fri Sep 26 19:49:07 2025: Servidor iniciado...
+Fri Sep 26 19:49:07 2025: Socket UDP inicializado correctamente
+Fri Sep 26 19:49:07 2025: Servidor CoAP Thread-per-Request escuchando en puerto 5683
+Fri Sep 26 19:49:17 2025: Mensaje recibido desde 127.0.0.1:56113 (37 bytes)
+Fri Sep 26 19:49:22 2025: Mensaje CoAP parseado - Ver:1 Tipo:0 Código:2
