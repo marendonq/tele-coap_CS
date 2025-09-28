@@ -114,10 +114,9 @@ void free_coap_message(coap_message_t *msg) {
     }
 }
 
-int create_coap_response(const coap_message_t *request, coap_message_t *response, 
-                        uint8_t code, const char *payload, size_t payload_len) {
+int create_coap_response(const coap_message_t *request, coap_message_t *response, uint8_t code, const char *payload, size_t payload_len) {
     if (!request || !response) return -1;
-    
+                            
     // Convertir request a CoapMessage
     CoapMessage request_coap_message;
     convert_to_coap_message(request, &request_coap_message);
@@ -128,7 +127,7 @@ int create_coap_response(const coap_message_t *request, coap_message_t *response
     
     // Configurar respuesta
     response_coap_message.version = request_coap_message.version;
-    response_coap_message.type = COAP_TYPE_ACKNOWLEDGMENT; // ACK para CON, NON para NON
+    response_coap_message.type = COAP_TYPE_ACKNOWLEDGMENT;
     response_coap_message.tkl = request_coap_message.tkl;
     response_coap_message.code = code;
     response_coap_message.message_id = request_coap_message.message_id;
@@ -175,4 +174,14 @@ size_t serialize_coap_message(const coap_message_t *msg, uint8_t *buffer, size_t
     }
     
     return (len > 0) ? len : 0;
+}
+
+int coap_default_success_code(uint8_t method) {
+    switch (method) {
+        case COAP_METHOD_GET:    return COAP_RESPONSE_CONTENT; // 2.05
+        case COAP_METHOD_POST:   return COAP_RESPONSE_CREATED; // 2.01
+        case COAP_METHOD_PUT:    return COAP_RESPONSE_CHANGED; // 2.04
+        case COAP_METHOD_DELETE: return COAP_RESPONSE_DELETED; // 2.02
+        default:                 return SERVER_ERROR;          // 5.00
+    }
 }

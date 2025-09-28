@@ -40,6 +40,9 @@ typedef struct {
 #define COAP_RESPONSE_VALID        67  // 2.03
 #define COAP_RESPONSE_CHANGED      68  // 2.04
 #define COAP_RESPONSE_CONTENT      69  // 2.05
+#define PAGE_NOT_FOUND              132  // 4.04
+#define SERVER_ERROR              160  // 5.00
+#define COAP_RESPONSE_NO_REPLY 199 //Valor especial para el manejo de NON's
 
 // Tipos de mensaje CoAP
 #define COAP_TYPE_CONFIRMABLE    0
@@ -50,6 +53,9 @@ typedef struct {
 // Opciones CoAP
 #define COAP_OPTION_URI_PATH      11
 #define COAP_OPTION_CONTENT_FORMAT 12
+
+// Devuelve el código de éxito por defecto para un método
+int coap_default_success_code(uint8_t method);
 
 // Funciones del parser
 int parse_coap_message(const uint8_t *data, size_t len, coap_message_t *msg);

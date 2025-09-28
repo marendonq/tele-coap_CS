@@ -6,3 +6,12 @@ server/main
 server/server.log 
 esp/multi_client 
 client/coap_cli
+
+#Ignorar lo ejecutables creados por el make
+
+coap_server 
+data_store.log 
+main 
+server.log 
+multi_client 
+coap_cli

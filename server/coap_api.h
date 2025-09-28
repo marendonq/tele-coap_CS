@@ -16,8 +16,12 @@ extern "C" {
 #define COAP_METHOD_PUT     3
 #define COAP_METHOD_DELETE  4
 
+#define RESPONSE_BUFFER_SIZE 512
+
 // Tipo de handler
-typedef void (*coap_handler_fn)(const coap_message_t *msg);
+// Funcion que recibe una request y un buffer en el que se debe guardar la respuesta
+// El handler debe retornar diferente de 0 si algo sale mal.
+typedef int (*coap_handler_fn)(const coap_message_t *msg, char *responseBuffer);
 
 typedef struct {
     char uri[128];
