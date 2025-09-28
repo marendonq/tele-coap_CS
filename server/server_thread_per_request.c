@@ -96,8 +96,7 @@ void *process_message(void *arg)
 
                     if (response_len > 0)
                     {
-                        ssize_t sent = sendto(sockfd, response_buffer, response_len, 0,
-                                              (struct sockaddr *)client_addr, client_len);
+                        ssize_t sent = sendto(sockfd, response_buffer, response_len, 0,(struct sockaddr *)client_addr, client_len);
                         if (sent > 0)
                         {
                             printf("[Thread %lu] Respuesta enviada (%zd bytes)\n", thread_id, sent);
@@ -197,8 +196,7 @@ void start_server(int port, Logger *logger)
         memset(buffer, 0, BUFFER_SIZE);
         client_len = sizeof(client_addr);
 
-        ssize_t n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0,
-                             (struct sockaddr *)&client_addr, &client_len);
+        ssize_t n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &client_len);
 
         if (n < 0)
         {
@@ -242,7 +240,7 @@ void start_server(int port, Logger *logger)
             free(thread_data);
             continue;
         }
-
+        
         // Detach thread para que se limpie automáticamente
         pthread_detach(thread);
 
