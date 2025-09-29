@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         logFile = argv[2]; // Segundo argumento = archivo de log
     }
 
-    coap_register_handler("/sensors/temp", COAP_METHOD_POST, guardarDatos);
+    coap_register_handler("/sensors/temp", COAP_METHOD_GET, guardarDatos);
 
     coap_server_start(port, logFile);
 

@@ -198,6 +198,8 @@ void start_server(int port, Logger *logger)
 
         ssize_t n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &client_len);
 
+        printf("LLego el mensaje");
+
         if (n < 0)
         {
             logger_log(logger, "Error al recibir datagrama");
