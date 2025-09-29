@@ -43,7 +43,6 @@ Para una compilacion mas pausada o para analisar cada componente del repo usar e
 Servidor:
 ```bash
 cd "/server"
-# gcc -o coap_server main.c server_thread_per_request.c coap_parser.c coap_router.c data_store.c message.c logger.c -lpthread 
 gcc -o coap_server main.c coap_api.c server_thread_per_request.c coap_parser.c coap_router.c data_store.c message.c logger.c -lpthread
 ```
 
