@@ -1,0 +1,22 @@
+# Build artifacts
+bin/
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.out
+*.exe
+*.dSYM/
+
+# Logs and runtime files
+server.log
+data_store.log
+*.log
+*.tmp
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+
