@@ -204,3 +204,16 @@ tail -f data_store.log
 ```
 
 ¡El sistema está listo para usar!
+
+## 🎥 Video de demostración
+
+Puedes ver el video aquí:
+
+[Ver video en Google Drive](https://drive.google.com/file/d/13dx9gUl4qb-enVqgx72NDZ9kN6p310CU/view?usp=drive_link)
+
+o verlo directamente:
+
+<video controls width="640" height="360">
+  <source src="https://drive.google.com/uc?export=download&id=13dx9gUl4qb-enVqgx72NDZ9kN6p310CU" type="video/mp4">
+  Tu navegador no soporta la etiqueta de video.
+</video>
