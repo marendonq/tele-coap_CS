@@ -16,8 +16,10 @@ int coap_router_handle_request(const coap_message_t *request, uint8_t *out_code,
 
     if (handler == NULL)
     {
+        // URI no encontrado - retornar 0 para que el servidor maneje el error
+        snprintf(out_payload, out_payload_size, "URI no encontrado: %s", request->uri_path);
         *out_code = PAGE_NOT_FOUND;
-        return -1;
+        return 0; // Cambiado de -1 a 0 para que el servidor procese la respuesta
     }
 
     if (request->type != COAP_TYPE_CONFIRMABLE)

@@ -13,6 +13,33 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <errno.h>
+
+// Función helper para interpretar códigos de respuesta CoAP
+const char* get_coap_response_message(uint8_t code) {
+    switch(code) {
+        case 65: return "2.01 Created";
+        case 66: return "2.02 Deleted";
+        case 67: return "2.03 Valid";
+        case 68: return "2.04 Changed";
+        case 69: return "2.05 Content";
+        case 132: return "4.04 Not Found";
+        case 160: return "5.00 Internal Server Error";
+        case 199: return "NON response";
+        default: return "Código desconocido";
+    }
+}
+
+// Función helper para interpretar métodos CoAP
+const char* get_coap_method_message(uint8_t code) {
+    switch(code) {
+        case 1: return "GET";
+        case 2: return "POST";
+        case 3: return "PUT";
+        case 4: return "DELETE";
+        default: return "Método desconocido";
+    }
+}
 
 #define BUFFER_SIZE 1024
 
@@ -71,7 +98,11 @@ void *process_message(void *arg)
 
         uint8_t resp_code = COAP_RESPONSE_VALID;
         char response_payload[512];
-        if (coap_router_handle_request(&request, &resp_code, response_payload, sizeof(response_payload)) == 0)
+        printf("[Thread %lu] URI recibido: '%s' - Método: %s\n", thread_id, request.uri_path, get_coap_method_message(request.code));
+        
+        int router_result = coap_router_handle_request(&request, &resp_code, response_payload, sizeof(response_payload));
+        
+        if (router_result == 0)
         {
             if (resp_code != COAP_RESPONSE_NO_REPLY)
             {
@@ -85,9 +116,9 @@ void *process_message(void *arg)
                         ssize_t sent = sendto(sockfd, response_buffer, response_len, 0,(struct sockaddr *)client_addr, client_len);
                         if (sent > 0)
                         {
-                            printf("[Thread %lu] Respuesta enviada (%zd bytes)\n", thread_id, sent);
+                            printf("[Thread %lu] Respuesta enviada: %s (%zd bytes)\n", thread_id, get_coap_response_message(resp_code), sent);
                             char log_msg3[256];
-                            snprintf(log_msg3, sizeof(log_msg3), "Respuesta CoAP enviada (%zd bytes)", sent);
+                            snprintf(log_msg3, sizeof(log_msg3), "Respuesta CoAP enviada (%zd bytes) - Código: %d (%s)", sent, resp_code, get_coap_response_message(resp_code));
                             logger_log(logger, log_msg3);
                         }
                         else
@@ -100,11 +131,17 @@ void *process_message(void *arg)
             }
             else
             {
-                printf("[Thread %lu] Respuesta omitida, mensaje NON \n", thread_id);
+                printf("[Thread %lu] Respuesta omitida (mensaje NON)\n", thread_id);
                 char log_msg4[256];
                 snprintf(log_msg4, sizeof(log_msg4), "Respuesta omitida mensaje NON");
                 logger_log(logger, log_msg4);
             }
+        }
+        else
+        {
+            // Error interno del servidor
+            printf("[Thread %lu] Error interno del servidor\n", thread_id);
+            logger_log(logger, "Error interno del servidor");
         }
 
         free_coap_message(&request);

@@ -2,6 +2,7 @@
 #include "message.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static void convert_from_coap_message(const CoapMessage *src, coap_message_t *dst) {
     memset(dst, 0, sizeof(coap_message_t));
