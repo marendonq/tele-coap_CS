@@ -58,9 +58,17 @@ int data_store_init(const char *filepath) {
     FILE *f = fopen(store_file, "r");
     if (!f) {
         f = fopen(store_file, "w");
-        if (f) fclose(f);
+        if (f) {
+            fclose(f);
+            printf("DATA_STORE_INIT: Archivo creado: %s\n", store_file);
+        } else {
+            printf("DATA_STORE_INIT: ERROR - No se pudo crear %s\n", store_file);
+            perror("fopen");
+            return -1;
+        }
         return 0;
     }
+    printf("DATA_STORE_INIT: Archivo existente: %s\n", store_file);
     char line[1024];
     while (fgets(line, sizeof(line), f)) {
         char *tab = strchr(line, '\t');
@@ -80,15 +88,25 @@ int data_store_init(const char *filepath) {
 
 int data_store_set(const char *uri_path, const char *json_payload) {
     if (!uri_path || !json_payload) return -1;
+    
     pthread_mutex_lock(&store_mutex);
     set_in_memory(uri_path, json_payload);
+    
     if (store_file[0]) {
         FILE *f = fopen(store_file, "a");
         if (f) {
             fprintf(f, "%s\t%s\n", uri_path, json_payload);
+            fflush(f);
             fclose(f);
+            printf("DATA_STORE: Guardado exitoso - %s -> %s\n", uri_path, json_payload);
+        } else {
+            printf("DATA_STORE: ERROR - No se pudo abrir '%s'\n", store_file);
+            perror("fopen");
         }
+    } else {
+        printf("DATA_STORE: ERROR - No hay archivo configurado\n");
     }
+    
     pthread_mutex_unlock(&store_mutex);
     return 0;
 }

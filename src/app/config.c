@@ -5,7 +5,7 @@ void set_default_config(AppConfig *cfg)
 {
     cfg->port = 5683;
     cfg->log_file = "server.log";
-    cfg->store_file = "data_store.log";
+    cfg->store_file = "data_store.log";  // Ruta simple en el directorio actual
     cfg->resource_path = "/sensors/temp";
 }
 

@@ -11,19 +11,14 @@ int is_valid_json(const char *str) {
     // Buscar llaves de apertura y cierre
     int open_braces = 0;
     int close_braces = 0;
-    int open_brackets = 0;
-    int close_brackets = 0;
     
     for (int i = 0; str[i]; i++) {
         if (str[i] == '{') open_braces++;
         else if (str[i] == '}') close_braces++;
-        else if (str[i] == '[') open_brackets++;
-        else if (str[i] == ']') close_brackets++;
     }
     
     // JSON válido debe tener llaves balanceadas
-    return (open_braces > 0 && open_braces == close_braces) || 
-           (open_brackets > 0 && open_brackets == close_brackets);
+    return (open_braces > 0 && open_braces == close_braces);
 }
 
 int HandlerFunctionTempPost(const coap_message_t *msg, char *responseBuffer)
