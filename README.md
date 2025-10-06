@@ -209,4 +209,4 @@ tail -f data_store.log
 
 Puedes ver el video aquí:
 
-[Ver video en Google Drive](https://drive.google.com/file/d/13dx9gUl4qb-enVqgx72NDZ9kN6p310CU/view?usp=drive_link)
+[Ver video en Google Drive]([https://drive.google.com/file/d/13dx9gUl4qb-enVqgx72NDZ9kN6p310CU/view?usp=drive_link](https://drive.google.com/file/d/13dx9gUl4qb-enVqgx72NDZ9kN6p310CU/view?usp=sharing))
